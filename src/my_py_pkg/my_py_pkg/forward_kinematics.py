@@ -3,6 +3,7 @@ import math
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
+from geometry_msgs.msg import Point
 
 
 class ForwardKinematics(Node):
@@ -16,6 +17,12 @@ class ForwardKinematics(Node):
             JointState,
             '/joint_states',
             self.joint_state_callback,
+            10
+        )
+
+        self.position_publisher = self.create_publisher(
+            Point, 
+            '/end_effector_position', 
             10
         )
 
@@ -40,10 +47,20 @@ class ForwardKinematics(Node):
         theta1 = self.shoulder_angle
         theta2 = self.elbow_angle
 
+        #shoulder offset
+        shoulder_offset = 0.025
+
         # Forward kinematics for links extending along local +Z,
         # with both revolute joints rotating about the Y-axis.
         x = L1 * math.sin(theta1) + L2 * math.sin(theta1 + theta2)
-        z = L1 * math.cos(theta1) + L2 * math.cos(theta1 + theta2)
+        z = shoulder_offset + L1 * math.cos(theta1) + L2 * math.cos(theta1 + theta2)
+
+        point = Point()
+        point.x = x
+        point.y = 0.0
+        point.z = z
+
+        self.position_publisher.publish(point)
 
         self.get_logger().info(
             f'End-effector estimate: x={x:.3f} m, z={z:.3f} m'

@@ -26,6 +26,8 @@ setup(
     entry_points={
     'console_scripts': [
         'forward_kinematics = my_py_pkg.forward_kinematics:main',
+        'inverse_kinematics = my_py_pkg.inverse_kinematic:main',
+        'joint_command_simulator = my_py_pkg.joint_command_simulator:main',
     ],
 },
 )
