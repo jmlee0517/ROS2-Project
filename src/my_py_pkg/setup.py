@@ -24,7 +24,8 @@ setup(
         ],
     },
     entry_points={
-        'console_scripts': [
-        ],
-    },
+    'console_scripts': [
+        'forward_kinematics = my_py_pkg.forward_kinematics:main',
+    ],
+},
 )

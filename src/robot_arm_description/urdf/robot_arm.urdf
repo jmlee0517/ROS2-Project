@@ -57,4 +57,21 @@
     <limit lower="-1.57" upper="1.57" effort="10" velocity="1.0"/>
   </joint>
 
+  <link name="end_effector">
+    <visual>
+      <geometry>
+        <sphere radius="0.04"/>
+      </geometry>
+      <material name="red">
+        <color rgba="1.0 0.0 0.0 1.0"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="end_effector_joint" type="fixed">
+    <parent link="forearm"/>
+    <child link="end_effector"/>
+    <origin xyz="0 0 0.4"/>
+  </joint>
+
 </robot>

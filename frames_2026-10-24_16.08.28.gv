@@ -1,0 +1,8 @@
+digraph G {
+"upper_arm" -> "forearm"[label=" Broadcaster: default_authority\nAverage rate: 10.204\nBuffer length: 4.9\nMost recent transform: 1792825708.0825\nOldest transform: 1792825703.182508\n"];
+"base_link" -> "upper_arm"[label=" Broadcaster: default_authority\nAverage rate: 10.204\nBuffer length: 4.9\nMost recent transform: 1792825708.0825\nOldest transform: 1792825703.182508\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1792825708.1933181"[ shape=plaintext ] ;
+}->"base_link";
+}
