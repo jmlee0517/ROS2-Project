@@ -29,6 +29,7 @@ setup(
         'inverse_kinematics = my_py_pkg.inverse_kinematic:main',
         'joint_command_simulator = my_py_pkg.joint_command_simulator:main',
         'joint_state_bridge = my_py_pkg.joint_state_bridge:main',
+        'trajectory_controller = my_py_pkg.trajectory_controller:main',
     ],
 },
 )

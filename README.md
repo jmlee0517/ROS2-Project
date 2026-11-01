@@ -1,43 +1,43 @@
-# ROS2-Project
+# ROS 2 Robotic Manipulator: Inverse Kinematics Comparison
 
-A vision-guided robotic arm project built with ROS 2 and Python, with plans to integrate PyTorch-based imitation learning.
+## About
 
-## Overview
+This project focuses on the development of a 4-DOF robotic manipulator using ROS 2, with the goal of comparing conventional analytical inverse kinematics against a neural network-based approach implemented using PyTorch.
 
-The goal of this project is to develop a low-cost robotic arm simulation that can detect objects, estimate their positions, and learn manipulation behaviors from demonstrations.
+The project explores two methods of solving inverse kinematics and evaluates their performance in a Gazebo simulation environment. Key evaluation criteria include end-effector positioning accuracy, computational efficiency, and generalization to unseen target positions.
 
-The project combines robotics fundamentals, computer vision, inverse kinematics, and deep learning.
+By combining mechanical modeling, robot kinematics, and machine learning, this project aims to investigate the potential of learning-based approaches in robotic motion control.
 
-## Current Features
+## Objectives
 
-- **Robot Description:** A two-joint robotic arm modeled using URDF.
-- **Forward Kinematics:** Calculates the end-effector position from joint angles.
-- **Inverse Kinematics:** Calculates joint angles for a specified target position.
-- **ROS 2 Communication:** Uses ROS 2 topics to exchange target positions, joint commands, and joint states.
-- **RViz Visualization:** Visualizes the robot model and simulates joint movements.
+- Develop a 4-DOF robotic manipulator model using URDF.
+- Implement analytical inverse kinematics.
+- Develop a neural network for inverse kinematics using PyTorch.
+- Integrate both approaches with ROS 2 and Gazebo.
+- Compare their performance under consistent simulation conditions.
 
-## Planned Features
+## Technologies
 
-- **Camera Integration:** Use the laptop's built-in camera with OpenCV to detect colored objects.
-- **Coordinate Calibration:** Map image coordinates to the robot's workspace.
-- **Demonstration Dataset:** Record observations and actions from manipulation tasks.
-- **PyTorch Imitation Learning:** Train a neural network using behavior cloning to predict robot actions from demonstrations.
-- **ROS 2 Integration:** Connect the trained model to the robot simulation.
-- **Evaluation:** Compare learned behavior with the conventional inverse-kinematics baseline.
+- **ROS 2** – Robot communication and control
+- **Python** – Algorithm implementation
+- **PyTorch** – Neural network development
+- **Gazebo** – Physics-based robot simulation
+- **URDF** – Robot description and modeling
+- **RViz** – Robot visualization
 
-## Tech Stack
+## Current Implementation
 
-- Ubuntu Linux
-- ROS 2
-- Python
-- URDF
-- RViz
-- OpenCV (planned)
-- PyTorch (planned)
-
-## Project Goal
-
-Build a modular robotic manipulation pipeline that combines classical robotics with learning-based control, providing a foundation for exploring imitation learning and more advanced vision-based robotic policies.
+| Component | Status |
+|---|---|
+| 2-DOF Robot Arm URDF | Completed |
+| 4-DOF Robot Arm URDF | Completed |
+| Forward Kinematics | Completed |
+| Analytical Inverse Kinematics | Completed |
+| Joint State Bridge | Completed |
+| RViz Visualization | Completed |
+| Gazebo Simulation Integration | In Progress |
+| PyTorch Neural Network for Inverse Kinematics | Planned |
+| Comparative Performance Evaluation | Planned |
 
 ## Installation & Usage
 
@@ -193,52 +193,3 @@ robot_state_publisher
        v
       RViz
 ```
-
-### 10. Verify ROS 2 Topics
-
-Check active nodes:
-
-```bash
-ros2 node list
-```
-
-Check available topics:
-
-```bash
-ros2 topic list
-```
-
-Inspect joint commands:
-
-```bash
-ros2 topic echo /joint_commands
-```
-
-Inspect joint states:
-
-```bash
-ros2 topic echo /joint_states
-```
-
-Check topic information:
-
-```bash
-ros2 topic info /joint_commands
-ros2 topic info /joint_states
-```
-
----
-
-## Current Implementation
-
-| Component | Status |
-|---|---|
-| 2-DOF Robot Arm URDF | Completed |
-| Forward Kinematics | Completed |
-| 4-DOF Robot Arm URDF | Completed |
-| Inverse Kinematics | Completed |
-| Joint State Bridge | Completed |
-| RViz Visualization | Completed |
-| Camera-based Object Detection | Planned |
-| PyTorch Integration | Planned |
-| ESP32 Hardware Control | Planned |

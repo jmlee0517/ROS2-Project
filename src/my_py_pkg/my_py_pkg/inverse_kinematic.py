@@ -41,14 +41,14 @@ class InverseKinematics(Node):
 
         self.command_publisher = self.create_publisher(
             JointState,
-            '/joint_commands',
+            '/joint_targets',
             10
         )
 
         self.get_logger().info(
             '4-DOF IK node started. Waiting for targets '
             'on /target_position'
-        )
+)
 
     def target_callback(self, msg):
 
