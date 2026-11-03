@@ -1,4 +1,4 @@
-# ROS 2 Robotic Manipulator: Inverse Kinematics Comparison
+# ROS 2 4-DOF Robotic Manipulator: Analytical vs. Learning-Based Inverse Kinematics
 
 ## About
 
@@ -34,8 +34,9 @@ By combining mechanical modeling, robot kinematics, and machine learning, this p
 | Forward Kinematics | Completed |
 | Analytical Inverse Kinematics | Completed |
 | Joint State Bridge | Completed |
+| Trajectory Controller | Completed |
 | RViz Visualization | Completed |
-| Gazebo Simulation Integration | In Progress |
+| Gazebo Simulation Integration | Planned |
 | PyTorch Neural Network for Inverse Kinematics | Planned |
 | Comparative Performance Evaluation | Planned |
 
@@ -138,9 +139,19 @@ The published joint states are then used by `robot_state_publisher` to update th
 
 **Note:** Do not run `joint_state_publisher` simultaneously with this bridge, because both would publish to `/joint_states`.
 
-### 7. Launch the Inverse Kinematics Node
+### 7. Launch the Trajectory Controller
 
 Open **Terminal 4**:
+
+Run the trajectory controller node:
+
+```bash
+ros2 run my_py_pkg trajectory_controller
+```
+
+### 8. Launch the Inverse Kinematics Node
+
+Open **Terminal 5**:
 
 Run the inverse kinematics node:
 
@@ -150,13 +161,13 @@ ros2 run my_py_pkg inverse_kinematics
 
 The node subscribes to `/target_position` and calculates the required joint angles.
 
-It publishes the calculated joint commands to `/joint_commands`.
+It publishes the calculated target joint positions to `/joint_targets`. The trajectory controller receives these targets and generates time-based joint trajectories, publishing interpolated joint commands to `/joint_commands`.
 
 The target end-effector pitch is currently configured as 180 degrees (pointing downward).
 
-### 8. Send a Target Position
+### 9. Send a Target Position
 
-Open **Terminal 5** and source the ROS 2 environment:
+Open **Terminal 6** and source the ROS 2 environment:
 
 Publish a target position using `geometry_msgs/msg/Point`:
 
@@ -170,13 +181,19 @@ The joint state bridge receives these commands and updates `/joint_states`.
 
 Finally, `robot_state_publisher` updates the TF transformations, and RViz visualizes the resulting robot configuration.
 
-### 9. ROS 2 Communication Architecture
+### 10. ROS 2 Communication Architecture
 
 ```text
 /target_position
        |
        v
 inverse_kinematics
+       |
+       v
+/joint_targets
+       |
+       v
+trajectory_controller
        |
        v
 /joint_commands
@@ -193,3 +210,29 @@ robot_state_publisher
        v
       RViz
 ```
+
+### 11. Example Target Positions
+
+The following target positions have been verified against the analytical inverse kinematics model and its joint limits.
+
+All coordinates are specified in meters.
+
+| Test | X (m) | Y (m) | Z (m) | Description |
+|---|---:|---:|---:|---|
+| A | 0.12 | 0.00 | 0.15 | Reference position |
+| B | 0.14 | 0.00 | 0.14 | Forward movement |
+| C | 0.16 | 0.00 | 0.12 | Extended forward position |
+| D | 0.10 | 0.00 | 0.16 | Upper position |
+| E | 0.12 | 0.05 | 0.15 | Positive base rotation |
+| F | 0.12 | -0.05 | 0.15 | Negative base rotation |
+| G | 0.15 | 0.05 | 0.14 | Forward diagonal (+Y) |
+| H | 0.15 | -0.05 | 0.14 | Forward diagonal (-Y) |
+| I | 0.10 | 0.05 | 0.16 | Upper diagonal (+Y) |
+
+Example command:
+
+```bash
+ros2 topic pub --once /target_position geometry_msgs/msg/Point "{x: 0.14, y: 0.0, z: 0.14}"
+```
+
+**Note:** These positions are valid for the current robot geometry, joint limits, and fixed end-effector pitch of 180 degrees. Physical collisions and hardware reachability have not yet been evaluated.
