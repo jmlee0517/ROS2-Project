@@ -1,0 +1,17 @@
+arm_controller:
+  ros__parameters:
+    joints:
+      - base_rotation_joint
+      - shoulder_joint
+      - elbow_joint
+      - wrist_joint
+
+    command_interfaces:
+      - position
+
+    state_interfaces:
+      - position
+      - velocity
+
+    state_publish_rate: 50.0
+    action_monitor_rate: 20.0

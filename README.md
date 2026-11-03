@@ -18,12 +18,13 @@ By combining mechanical modeling, robot kinematics, and machine learning, this p
 
 ## Technologies
 
-- **ROS 2** – Robot communication and control
+- **ROS 2 Lyrical** – Robot communication and control
 - **Python** – Algorithm implementation
 - **PyTorch** – Neural network development
-- **Gazebo** – Physics-based robot simulation
+- **Gazebo Sim** – Physics-based robot simulation
+- **ros2_control** – Robot hardware abstraction and controller management
 - **URDF** – Robot description and modeling
-- **RViz** – Robot visualization
+- **RViz2** – Robot visualization
 
 ## Current Implementation
 
@@ -33,20 +34,24 @@ By combining mechanical modeling, robot kinematics, and machine learning, this p
 | 4-DOF Robot Arm URDF | Completed |
 | Forward Kinematics | Completed |
 | Analytical Inverse Kinematics | Completed |
-| Joint State Bridge | Completed |
-| Trajectory Controller | Completed |
+| Joint State Bridge (RViz) | Completed |
+| Python Trajectory Controller (RViz) | Completed |
 | RViz Visualization | Completed |
-| Gazebo Simulation Integration | Planned |
+| Gazebo Simulation Integration | Completed |
+| ros2_control Integration | Completed |
+| Joint Trajectory Controller (Gazebo) | Completed |
+| IK-to-Gazebo Command Integration | Completed |
 | PyTorch Neural Network for Inverse Kinematics | Planned |
 | Comparative Performance Evaluation | Planned |
 
 ## Installation & Usage
 
-### 1. My setup
+### 1. System Requirements
 
 - Ubuntu 26.04
 - ROS 2 Lyrical
 - Python 3
+- Gazebo Sim 10
 - RViz2
 - Colcon
 
@@ -77,19 +82,15 @@ Source the workspace:
 source install/setup.bash
 ```
 
+---
+
+## RViz Visualization
+
+The RViz workflow uses a custom joint-state bridge and Python trajectory controller to visualize the robot's movement.
+
 ### 4. Launch the Robot Description
 
-Open **Terminal 1**.
-
-Navigate to the workspace and source the environment:
-
-```bash
-cd ~/ROS2-Project
-source /opt/ros/lyrical/setup.bash
-source install/setup.bash
-```
-
-Launch the 4-DOF robot model:
+Open **Terminal 1**:
 
 ```bash
 ros2 launch robot_arm_description display.launch.py
@@ -101,7 +102,7 @@ This launches the `robot_state_publisher` node using:
 robot_arm_description/urdf/robot_arm_4dof.urdf
 ```
 
-The `robot_state_publisher` calculates and publishes TF transformations based on the incoming joint states.
+The `robot_state_publisher` calculates and publishes TF transformations based on incoming joint states.
 
 ### 5. Launch RViz2
 
@@ -123,37 +124,33 @@ The 4-DOF robot arm should now appear in RViz.
 
 Open **Terminal 3**:
 
-Run the bridge node:
-
 ```bash
 ros2 run my_py_pkg joint_state_bridge
 ```
 
 The `joint_state_bridge` node:
 
-- Subscribes to `/joint_commands` to receive joint angles calculated by the inverse kinematics node.
+- Subscribes to `/joint_commands`.
 - Stores the received joint angles in `joint_positions`.
 - Publishes the complete joint state to `/joint_states` at 30 Hz.
 
-The published joint states are then used by `robot_state_publisher` to update the robot's TF transformations.
+The published joint states are used by `robot_state_publisher` to update the robot's TF transformations.
 
 **Note:** Do not run `joint_state_publisher` simultaneously with this bridge, because both would publish to `/joint_states`.
 
-### 7. Launch the Trajectory Controller
+### 7. Launch the Python Trajectory Controller
 
 Open **Terminal 4**:
-
-Run the trajectory controller node:
 
 ```bash
 ros2 run my_py_pkg trajectory_controller
 ```
 
+The trajectory controller receives joint targets and generates time-based joint commands.
+
 ### 8. Launch the Inverse Kinematics Node
 
 Open **Terminal 5**:
-
-Run the inverse kinematics node:
 
 ```bash
 ros2 run my_py_pkg inverse_kinematics
@@ -161,27 +158,117 @@ ros2 run my_py_pkg inverse_kinematics
 
 The node subscribes to `/target_position` and calculates the required joint angles.
 
-It publishes the calculated target joint positions to `/joint_targets`. The trajectory controller receives these targets and generates time-based joint trajectories, publishing interpolated joint commands to `/joint_commands`.
+It publishes the calculated joint positions to `/joint_targets`. The trajectory controller receives these targets and publishes interpolated joint commands to `/joint_commands`.
 
 The target end-effector pitch is currently configured as 180 degrees (pointing downward).
 
 ### 9. Send a Target Position
 
-Open **Terminal 6** and source the ROS 2 environment:
-
-Publish a target position using `geometry_msgs/msg/Point`:
+Open **Terminal 6**:
 
 ```bash
 ros2 topic pub --once /target_position geometry_msgs/msg/Point "{x: 0.12, y: 0.0, z: 0.15}"
 ```
 
-The inverse kinematics node calculates the joint angles and publishes them to `/joint_commands`.
+The inverse kinematics node calculates the joint angles, and the trajectory controller generates the corresponding joint commands.
 
-The joint state bridge receives these commands and updates `/joint_states`.
+The joint state bridge updates `/joint_states`, allowing `robot_state_publisher` to update the TF transformations and RViz to visualize the resulting configuration.
 
-Finally, `robot_state_publisher` updates the TF transformations, and RViz visualizes the resulting robot configuration.
+---
 
-### 10. ROS 2 Communication Architecture
+## Gazebo Simulation
+
+The Gazebo workflow uses Gazebo Sim together with `gz_ros2_control` and a ROS 2 joint trajectory controller.
+
+Unlike the RViz workflow, Gazebo directly simulates the robot's joints and physics.
+
+### 10. Launch Gazebo and Spawn the Robot
+
+Open **Terminal 1**:
+
+```bash
+ros2 launch robot_arm_description gazebo.launch.py
+```
+
+This launch file:
+
+- Starts Gazebo Sim.
+- Loads the Gazebo-specific 4-DOF robot description.
+- Spawns the robot into the simulation world.
+- Initializes the `gz_ros2_control` plugin.
+- Starts the ROS 2 controller manager.
+
+The Gazebo-specific robot description is:
+
+```text
+robot_arm_description/urdf/robot_arm_4dof_gazebo.urdf
+```
+
+The robot uses the `gz_ros2_control/GazeboSimSystem` hardware interface to communicate with Gazebo's physics simulation.
+
+### 11. Verify the Controllers
+
+Once Gazebo has started, open **Terminal 2**:
+
+```bash
+ros2 control list_controllers
+```
+
+Both controllers should be active:
+
+```text
+arm_controller          joint_trajectory_controller/JointTrajectoryController  active
+joint_state_broadcaster joint_state_broadcaster/JointStateBroadcaster          active
+```
+
+The `joint_state_broadcaster` publishes the simulated joint states, while the `arm_controller` executes joint trajectories.
+
+### 12. Launch the Joint Target-to-Trajectory Adapter
+
+Open **Terminal 3**:
+
+```bash
+ros2 run my_py_pkg joint_target_to_trajectory
+```
+
+The `joint_target_to_trajectory` node:
+
+- Subscribes to `/joint_targets`.
+- Maps the joint positions using their joint names.
+- Converts the received positions into a `JointTrajectory` message.
+- Publishes the trajectory to `/arm_controller/joint_trajectory`.
+
+Each trajectory currently uses a 3-second execution duration.
+
+### 13. Launch the Inverse Kinematics Node
+
+Open **Terminal 4**:
+
+```bash
+ros2 run my_py_pkg inverse_kinematics
+```
+
+The node subscribes to `/target_position` and calculates the required joint angles.
+
+It publishes the resulting joint positions to `/joint_targets`, which are then converted into trajectories by the adapter node.
+
+### 14. Control the Robot in Gazebo
+
+Open **Terminal 5** and publish a target position:
+
+```bash
+ros2 topic pub --once /target_position geometry_msgs/msg/Point "{x: 0.12, y: 0.0, z: 0.15}"
+```
+
+The robot should move toward the specified end-effector position in Gazebo.
+
+You can send additional target positions while the nodes are running:
+
+```bash
+ros2 topic pub --once /target_position geometry_msgs/msg/Point "{x: 0.15, y: 0.0, z: 0.20}"
+```
+
+### 15. Gazebo ROS 2 Communication Architecture
 
 ```text
 /target_position
@@ -193,25 +280,42 @@ inverse_kinematics
 /joint_targets
        |
        v
-trajectory_controller
+joint_target_to_trajectory
        |
        v
-/joint_commands
+/arm_controller/joint_trajectory
        |
        v
-joint_state_bridge
+joint_trajectory_controller
+       |
+       v
+gz_ros2_control
+       |
+       v
+Gazebo Sim
+       |
+       v
+Robot Movement
+```
+
+The joint states are published separately through:
+
+```text
+Gazebo Sim
+       |
+       v
+gz_ros2_control
+       |
+       v
+joint_state_broadcaster
        |
        v
 /joint_states
-       |
-       v
-robot_state_publisher
-       |
-       v
-      RViz
 ```
 
-### 11. Example Target Positions
+---
+
+## Example Target Positions
 
 The following target positions have been verified against the analytical inverse kinematics model and its joint limits.
 

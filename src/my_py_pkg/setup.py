@@ -30,6 +30,7 @@ setup(
         'joint_command_simulator = my_py_pkg.joint_command_simulator:main',
         'joint_state_bridge = my_py_pkg.joint_state_bridge:main',
         'trajectory_controller = my_py_pkg.trajectory_controller:main',
+        'joint_target_to_trajectory = my_py_pkg.joint_target_to_trajectory:main',
     ],
 },
 )

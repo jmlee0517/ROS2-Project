@@ -26,6 +26,6 @@ endif()
 ament_package()
 
 install(
-  DIRECTORY launch urdf
+  DIRECTORY launch urdf config worlds
   DESTINATION share/${PROJECT_NAME}
 )
