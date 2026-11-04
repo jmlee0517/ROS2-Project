@@ -1,4 +1,5 @@
-
+import time
+from std_msgs.msg import Float64
 import math
 
 import rclpy
@@ -45,12 +46,20 @@ class InverseKinematics(Node):
             10
         )
 
+        self.computation_time_pub = self.create_publisher(
+            Float64,
+            '/ik_computation_time',
+            10
+        )
+
         self.get_logger().info(
             '4-DOF IK node started. Waiting for targets '
             'on /target_position'
 )
 
     def target_callback(self, msg):
+
+        start_time = time.perf_counter()
 
         # -------------------------------------------------
         # 1. BASE ROTATION
@@ -161,6 +170,16 @@ class InverseKinematics(Node):
 
         # Prefer the positive-elbow solution if both are valid.
         theta1, theta2, theta3 = valid_solutions[0]
+
+        computation_time = time.perf_counter() - start_time
+
+        time_msg = Float64()
+        time_msg.data = computation_time
+        self.computation_time_pub.publish(time_msg)
+
+        self.get_logger().info(
+            f'IK computation time: {computation_time * 1000:.4f} ms'
+        )
 
         # -------------------------------------------------
         # 6. PUBLISH JOINT COMMANDS

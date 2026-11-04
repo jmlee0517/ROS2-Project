@@ -1,3 +1,4 @@
+from std_msgs.msg import Float64
 import csv
 import math
 from pathlib import Path
@@ -102,6 +103,15 @@ class ExperimentRunner(Node):
             10
         )
 
+        self.current_ik_computation_time = None
+
+        self.ik_time_sub = self.create_subscription(
+            Float64,
+            '/ik_computation_time',
+            self.ik_time_callback,
+            10
+        )
+
         self.timer = self.create_timer(
             0.05,
             self.experiment_callback
@@ -141,6 +151,7 @@ class ExperimentRunner(Node):
             'actual_z',
             'position_error_m',
             'movement_time_s',
+            'ik_computation_time_ms',
             'status'
         ])
 
@@ -176,6 +187,8 @@ class ExperimentRunner(Node):
         self.current_target = self.targets[
             self.target_index
         ]
+
+        self.current_ik_computation_time = None
 
         msg = Point()
 
@@ -258,6 +271,9 @@ class ExperimentRunner(Node):
                 'TIMEOUT'
             )
 
+    def ik_time_callback(self, msg):
+        self.current_ik_computation_time = msg.data
+
     def record_trial(
         self,
         actual,
@@ -266,6 +282,12 @@ class ExperimentRunner(Node):
         status
     ):
 
+        ik_time_ms = (
+            self.current_ik_computation_time * 1000
+            if self.current_ik_computation_time is not None
+            else None
+        )
+        
         target = self.current_target
 
         self.writer.writerow([
@@ -274,12 +296,14 @@ class ExperimentRunner(Node):
             *actual,
             error,
             movement_time,
+            ik_time_ms if ik_time_ms is not None else '',
             status
         ])
 
         self.results.append({
             'error_m': error,
             'movement_time_s': movement_time,
+            'ik_time_ms': ik_time_ms,
             'status': status
         })
 
@@ -344,6 +368,17 @@ class ExperimentRunner(Node):
             min_movement = min(movement_times)
             max_movement = max(movement_times)
 
+            ik_times = [
+                result['ik_time_ms']
+                for result in self.results
+                if result['ik_time_ms'] is not None
+            ]
+
+            if ik_times:
+                mean_ik_time = sum(ik_times) / len(ik_times)
+                min_ik_time = min(ik_times)
+                max_ik_time = max(ik_times)
+
             success_rate = successful / total * 100
 
             # Append summary to CSV
@@ -363,6 +398,9 @@ class ExperimentRunner(Node):
                 ['Mean movement time', mean_movement, 's'],
                 ['Minimum movement time', min_movement, 's'],
                 ['Maximum movement time', max_movement, 's'],
+                ['Mean IK computation time', mean_ik_time if ik_times else '', 'ms'],
+                ['Minimum IK computation time', min_ik_time if ik_times else '', 'ms'],
+                ['Maximum IK computation time', max_ik_time if ik_times else '', 'ms'],
             ]
 
             for row in summary:
