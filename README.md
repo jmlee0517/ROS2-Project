@@ -41,8 +41,12 @@ By combining mechanical modeling, robot kinematics, and machine learning, this p
 | ros2_control Integration | Completed |
 | Joint Trajectory Controller (Gazebo) | Completed |
 | IK-to-Gazebo Command Integration | Completed |
+| End-Effector Pose Tracking (TF) | Completed |
+| IK Computation-Time Measurement | Completed |
+| Automated Gazebo Experiment Runner | Completed |
+| Analytical IK Performance Evaluation (40 trials) | Completed |
 | PyTorch Neural Network for Inverse Kinematics | Planned |
-| Comparative Performance Evaluation | Planned |
+| Analytical vs. PyTorch Comparative Evaluation | Planned |
 
 ## Installation & Usage
 
@@ -312,6 +316,125 @@ joint_state_broadcaster
        v
 /joint_states
 ```
+
+The analytical IK node also measures its own solver execution time using
+`time.perf_counter()` and publishes the result to `/ik_computation_time`
+as a `std_msgs/msg/Float64` value in seconds. This measures the IK
+calculation itself, not the robot's movement time.
+
+
+---
+
+## Automated Gazebo Experiments
+
+The project includes an automated experiment pipeline for evaluating the
+analytical inverse kinematics implementation in Gazebo.
+
+### 16. Experiment Pipeline
+
+The experiment uses the same Gazebo robot, `ros2_control` controller, and
+analytical IK node as the manual workflow. The end-effector pose is tracked
+through TF, and the experiment runner evaluates a sequence of target positions.
+
+Open the following terminals after launching Gazebo and confirming that both
+controllers are active.
+
+**Terminal 1 — Gazebo**
+
+```bash
+ros2 launch robot_arm_description gazebo.launch.py
+```
+
+**Terminal 2 — Joint target-to-trajectory adapter**
+
+```bash
+ros2 run my_py_pkg joint_target_to_trajectory
+```
+
+**Terminal 3 — Analytical inverse kinematics**
+
+```bash
+ros2 run my_py_pkg inverse_kinematics
+```
+
+**Terminal 4 — End-effector pose tracker**
+
+```bash
+ros2 run my_py_pkg end_effector_tracker --ros-args -p use_sim_time:=true
+```
+
+The tracker looks up the transform from `world` to `end_effector` and
+publishes the measured pose to `/end_effector_pose` as a
+`geometry_msgs/msg/PoseStamped` message.
+
+**Terminal 5 — Experiment runner**
+
+```bash
+ros2 run my_py_pkg experiment_runner --ros-args -p use_sim_time:=true
+```
+
+The experiment runner publishes the predefined target positions sequentially,
+monitors the end-effector pose, and records the result of each trial.
+
+### 17. Experiment Measurements
+
+The experiment runner records the following metrics for each target:
+
+| Metric | Description | Unit |
+|---|---|---|
+| Positioning error | Euclidean distance between the target and measured end-effector position | m |
+| Target execution time | Time from target publication until the end effector reaches and remains within the position tolerance | s |
+| IK computation time | Time spent calculating the analytical IK solution, measured with `time.perf_counter()` | ms |
+| Trial status | Whether the target satisfied the experiment's success criteria | — |
+
+The current experiment settings are:
+
+- Number of target positions: 40
+- Position tolerance: 0.002 m (2 mm)
+- Required stable duration: 0.5 s
+- Target trajectory duration: 3 s
+- Experiment timeout: 15 s (simulation time)
+
+**Timing clarification:** The trajectory sent to the joint trajectory controller
+has a configured duration of 3 seconds. The recorded target execution time is
+not fixed to 3 seconds: it is measured by the experiment runner and also
+includes communication/controller overhead and the stability-check interval.
+It should therefore be interpreted as end-to-end target execution time rather
+than isolated physical motion time.
+
+IK computation time is measured separately inside the analytical IK node.
+It represents solver computation time and does not include Gazebo movement.
+
+### 18. Experiment Output
+
+The experiment results are saved to:
+
+```text
+~/ROS2-Project/experiments/analytical_results.csv
+```
+
+The CSV contains one row per trial, followed by an automatically generated
+experiment summary containing aggregate statistics such as:
+
+- Total, successful, and failed trials
+- Success rate
+- Mean, median, and maximum positioning error
+- Positioning error RMSE
+- Mean, minimum, and maximum target execution time
+- Mean, minimum, and maximum IK computation time
+
+The experiment runner uses ROS simulation time. Make sure the Gazebo clock
+bridge is running and `/clock` is advancing before starting the experiment.
+
+### 19. Analytical IK Baseline
+
+The automated experiment pipeline establishes the analytical IK baseline
+that will be used for comparison with the planned PyTorch-based approach.
+The two approaches will be evaluated under consistent conditions, using the
+same robot model, target set, Gazebo controller, and measurement criteria.
+
+The PyTorch implementation and comparative evaluation are still planned;
+they are not part of the current completed implementation.
 
 ---
 
