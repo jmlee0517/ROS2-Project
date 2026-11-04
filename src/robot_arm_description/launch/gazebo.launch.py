@@ -58,6 +58,15 @@ def generate_launch_description():
         }]
     )
 
+    clock_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        arguments=[
+            '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'
+        ],
+        output='screen'
+    )
+
     spawn_robot = Node(
         package='ros_gz_sim',
         executable='create',
@@ -94,6 +103,7 @@ def generate_launch_description():
         gazebo_env,
         library_path,
         gazebo,
+        clock_bridge,
         robot_state_publisher,
 
         # Allow Gazebo to initialize before spawning the robot.

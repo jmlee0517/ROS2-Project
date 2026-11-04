@@ -31,6 +31,8 @@ setup(
         'joint_state_bridge = my_py_pkg.joint_state_bridge:main',
         'trajectory_controller = my_py_pkg.trajectory_controller:main',
         'joint_target_to_trajectory = my_py_pkg.joint_target_to_trajectory:main',
+        'end_effector_tracker = my_py_pkg.end_effector_tracker:main',
+        'experiment_runner = my_py_pkg.experiment_runner:main',
     ],
 },
 )
