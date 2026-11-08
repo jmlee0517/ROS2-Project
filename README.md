@@ -463,3 +463,80 @@ ros2 topic pub --once /target_position geometry_msgs/msg/Point "{x: 0.14, y: 0.0
 ```
 
 **Note:** These positions are valid for the current robot geometry, joint limits, and fixed end-effector pitch of 180 degrees. Physical collisions and hardware reachability have not yet been evaluated.
+
+## Learning-Based Inverse Kinematics
+
+In addition to the analytical inverse kinematics solver, this project introduces a learning-based approach using PyTorch. A Multi-Layer Perceptron (MLP) is trained to predict the four joint angles required to reach a desired end-effector position.
+
+### Dataset Generation
+
+A dataset of 50,000 samples is generated using the robot's forward kinematics model.
+
+- **Input:** End-effector position (x, y, z)
+- **Output:** Joint angles (base rotation, shoulder, elbow, wrist)
+- **Sampling:** Uniform random sampling in joint space
+- **Random seed:** 42
+- **Elbow configuration:** Positive-elbow branch
+- **End-effector pitch:** Fixed at π radians
+
+Each generated sample is validated against the robot's joint limits and forward kinematics model to ensure consistency.
+
+Dataset location: `datasets/ik_dataset.csv`
+
+### Neural Network Architecture
+
+The inverse kinematics model is implemented as a Multi-Layer Perceptron (MLP).
+
+| Layer | Configuration |
+|---|---|
+| Input | 3 neurons (x, y, z) |
+| Hidden layer 1 | 128 neurons, ReLU |
+| Hidden layer 2 | 128 neurons, ReLU |
+| Hidden layer 3 | 64 neurons, ReLU |
+| Output | 4 neurons (joint angles) |
+
+**Training configuration:**
+- Train / validation / test split: 70% / 15% / 15%
+- Optimizer: Adam
+- Learning rate: 0.001
+- Batch size: 128
+- Loss function: Mean Squared Error (MSE)
+- Maximum epochs: 200
+- Early stopping patience: 20 epochs
+- Input normalization using training-set statistics
+
+The best-performing model is saved to `models/pytorch_ik_model.pth`.
+
+### PyTorch Model Evaluation
+
+The trained model was evaluated on 7,500 previously unseen test samples.
+
+**Joint-angle prediction errors**
+
+| Joint | Mean Absolute Error |
+|---|---:|
+| Base rotation | 0.003528 rad |
+| Shoulder | 0.002886 rad |
+| Elbow | 0.003772 rad |
+| Wrist | 0.002578 rad |
+
+**Cartesian positioning accuracy**
+
+| Metric | Result |
+|---|---:|
+| Mean positioning error | 0.918 mm |
+| Median positioning error | 0.867 mm |
+| Maximum positioning error | 4.056 mm |
+| RMSE | 1.004 mm |
+| 95th percentile error | 1.657 mm |
+| Success rate (within 2 mm) | 98.68% |
+
+**Inference performance**
+
+| Metric | Result |
+|---|---:|
+| Average single-sample inference time | 0.191 ms |
+
+The 2 mm positioning threshold corresponds to the tolerance used in the Gazebo experiment runner.
+
+*Note: These results are from an offline randomly held-out test set. They do not yet represent a direct comparison against the analytical solver in Gazebo.*

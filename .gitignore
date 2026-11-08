@@ -1,9 +1,13 @@
-# ROS 2 build artifacts
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# ROS 2
 build/
 install/
 log/
 
-# Python cache files
-__pycache__/
-*.py[cod]
-.venv/
+# IDE
+.vscode/
+.idea/
